@@ -69,7 +69,7 @@ export async function fetchBcvRate(): Promise<{ rate: number | null; error?: str
     // The API returns 'promedio' for the BCV rate
     const bcvRate = data?.promedio
     if (typeof bcvRate === 'number' && bcvRate > 0) {
-      return { rate: bcvRate }
+      return { rate: Math.round(bcvRate * 100) / 100 }
     }
 
     return { rate: null, error: 'Formato de respuesta inesperado' }
@@ -96,7 +96,7 @@ export async function fetchUsdtRate(): Promise<{ rate: number | null; error?: st
 
     const usdtRate = data?.promedio
     if (typeof usdtRate === 'number' && usdtRate > 0) {
-      return { rate: usdtRate }
+      return { rate: Math.round(usdtRate * 100) / 100 }
     }
 
     return { rate: null, error: 'Formato de respuesta inesperado' }

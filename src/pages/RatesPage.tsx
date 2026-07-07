@@ -276,8 +276,8 @@ export default function RatesPage() {
                           <TableCell className="font-medium text-zinc-300">
                             {format(new Date(r.rate_date), 'dd/MM/yyyy')}
                           </TableCell>
-                          <TableCell className="text-center font-bold text-zinc-100">{r.rate_usdt} Bs</TableCell>
-                          <TableCell className="text-center font-bold text-zinc-100">{r.rate_bcv} Bs</TableCell>
+                          <TableCell className="text-center font-bold text-zinc-100">{Number(r.rate_usdt).toFixed(2)} Bs</TableCell>
+                          <TableCell className="text-center font-bold text-zinc-100">{Number(r.rate_bcv).toFixed(2)} Bs</TableCell>
                           <TableCell className="text-center">
                             <span className={`font-bold ${gap > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
                               {formatPercent(gap)}
