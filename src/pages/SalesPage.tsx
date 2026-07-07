@@ -46,6 +46,11 @@ import { Download, Loader2, ShoppingBag, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+const PAYMENT_METHODS = [
+  { id: 'cash_usd', name: '💵 Efectivo ($)' },
+  { id: 'bcv_bs', name: '🏦 Tasa BCV (Bs)' },
+]
+
 export default function SalesPage() {
   const { sales, loading: salesLoading, deleteSale, createSale } = useSales()
   const { allProducts } = useProducts()
@@ -169,12 +174,15 @@ export default function SalesPage() {
                 >
                   <SelectTrigger className="bg-background border-border w-full">
                     <SelectValue>
-                      {paymentType === 'cash_usd' ? '💵 Efectivo ($)' : '🏦 Tasa BCV (Bs)'}
+                      {paymentType ? PAYMENT_METHODS.find(p => p.id === paymentType)?.name : 'Medio de pago'}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent alignItemWithTrigger={false} className="p-1">
-                    <SelectItem value="cash_usd">Efectivo ($)</SelectItem>
-                    <SelectItem value="bcv_bs">Tasa BCV (Bs)</SelectItem>
+                    {PAYMENT_METHODS.map(method => (
+                      <SelectItem key={method.id} value={method.id}>
+                        {method.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
