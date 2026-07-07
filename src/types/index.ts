@@ -1,0 +1,121 @@
+// ====================================================================
+// Finanzas VE Pro — TypeScript Type Definitions
+// ====================================================================
+
+// ---- Auth ----
+export interface User {
+  id: string
+  email: string
+  name: string
+  avatar_url?: string
+}
+
+// ---- Categories ----
+export interface Category {
+  id: string
+  user_id: string
+  name: string
+  created_at: string
+}
+
+export type CategoryInsert = Omit<Category, 'id' | 'created_at'>
+
+// ---- Products ----
+export interface Product {
+  id: string
+  user_id: string
+  category_id: string | null
+  name: string
+  cost_usd: number
+  created_at: string
+  updated_at: string
+  // Joined
+  category?: Category | null
+}
+
+export type ProductInsert = Omit<Product, 'id' | 'created_at' | 'updated_at' | 'category'>
+
+// ---- Rate History ----
+export interface RateHistory {
+  id: string
+  user_id: string
+  rate_date: string
+  rate_usdt: number
+  rate_bcv: number
+  profit_margin: number
+  created_at: string
+}
+
+export type RateHistoryInsert = Omit<RateHistory, 'id' | 'created_at'>
+
+// ---- Sales ----
+export type PaymentType = 'cash_usd' | 'bcv_bs'
+
+export interface Sale {
+  id: string
+  user_id: string
+  product_id: string | null
+  quantity: number
+  payment_type: PaymentType
+  rate_usdt_at_sale: number
+  rate_bcv_at_sale: number
+  margin_at_sale: number
+  product_name_snapshot: string
+  product_cost_snapshot: number
+  sale_date: string
+  created_at: string
+  // Joined
+  product?: Product | null
+}
+
+export type SaleInsert = Omit<Sale, 'id' | 'created_at' | 'product'>
+
+// ---- Calculated Pricing ----
+export interface ProductPricing {
+  costUsd: number
+  costBs: number
+  effectivePriceUsd: number
+  priceBs: number
+  priceBcvUsd: number
+  profitUsd: number
+  profitPercent: number
+}
+
+// ---- Dashboard KPIs ----
+export interface DashboardKPIs {
+  totalInvested: number
+  totalRevenue: number
+  totalProfit: number
+  profitMarginPercent: number
+  totalSalesCount: number
+}
+
+// ---- Config / Rates ----
+export interface RateConfig {
+  rateUsdt: number
+  rateBcv: number
+  profitMargin: number
+}
+
+// ---- Chart Data ----
+export interface ChartDataPoint {
+  date: string
+  revenue: number
+  profit: number
+  investment: number
+}
+
+export interface GapDataPoint {
+  date: string
+  rateUsdt: number
+  rateBcv: number
+  gap: number
+}
+
+// ---- Period Filter ----
+export type PeriodFilter = 'today' | 'week' | 'month' | 'custom'
+
+export interface DateRange {
+  from: Date
+  to: Date
+}
