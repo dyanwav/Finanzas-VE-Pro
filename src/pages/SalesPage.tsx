@@ -14,16 +14,15 @@ import { Badge } from '@/components/ui/badge'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
-import { ShoppingBag, Download, Trash2, Loader2, DollarSign, Banknote } from 'lucide-react'
+import { ShoppingBag, Download, Trash2, Loader2 } from 'lucide-react'
 import type { PaymentType } from '@/types'
 import { format } from 'date-fns'
 
 export default function SalesPage() {
-  const { sales, loading: salesLoading, deleteSale } = useSales()
+  const { sales, loading: salesLoading, deleteSale, createSale } = useSales()
   const { allProducts } = useProducts()
   const { rateUsdt, profitMargin } = useConfigStore()
   const { exportSales } = useExport()
-  const { createSale } = useSales()
 
   const [selectedProductId, setSelectedProductId] = useState<string>('')
   const [quantity, setQuantity] = useState<number>(1)
@@ -119,18 +118,8 @@ export default function SalesPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash_usd">
-                      <div className="flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-emerald-400" />
-                        <span>Efectivo ($)</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="bcv_bs">
-                      <div className="flex items-center gap-2">
-                        <Banknote className="w-4 h-4 text-amber-400" />
-                        <span>Tasa BCV (Bs)</span>
-                      </div>
-                    </SelectItem>
+                    <SelectItem value="cash_usd">💵 Efectivo ($)</SelectItem>
+                    <SelectItem value="bcv_bs">🏦 Tasa BCV (Bs)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
