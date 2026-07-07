@@ -116,7 +116,11 @@ export default function ProductsPage() {
                   <Label htmlFor="category">Categoría</Label>
                   <Select onValueChange={(val) => form.setValue('category_id', val || 'none')} defaultValue="none">
                     <SelectTrigger className="border-border bg-background">
-                      <SelectValue placeholder="Selecciona una categoría" />
+                      <SelectValue placeholder="Selecciona una categoría">
+                        {form.watch('category_id') === 'none' || !form.watch('category_id') ? 'Sin categoría' :
+                         form.watch('category_id') === 'new' ? '+ Crear nueva categoría' :
+                         categories.find((c) => c.id === form.watch('category_id'))?.name}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Sin categoría</SelectItem>
@@ -159,7 +163,9 @@ export default function ProductsPage() {
         </div>
         <Select value={categoryFilter || 'all'} onValueChange={(v) => setCategoryFilter(v === 'all' ? null : v)}>
           <SelectTrigger className="w-full sm:w-[200px] border-border bg-card-glass">
-            <SelectValue placeholder="Filtrar por categoría" />
+            <SelectValue placeholder="Filtrar por categoría">
+              {categoryFilter === 'all' || !categoryFilter ? 'Todas las categorías' : categories.find((c) => c.id === categoryFilter)?.name}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas las categorías</SelectItem>
