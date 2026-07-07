@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useRates, fetchBcvRate, fetchUsdtRate } from '@/hooks/useRates'
+import { useState } from 'react'
+import { useRates } from '@/hooks/useRates'
 import { useConfigStore } from '@/stores/config-store'
 import { useAuthStore } from '@/stores/auth-store'
 import { useExport } from '@/hooks/useExport'
@@ -18,57 +18,17 @@ import { format } from 'date-fns'
 export default function RatesPage() {
   const { user } = useAuthStore()
   const { rateHistory, loading: ratesLoading, deleteRate, refreshRates } = useRates()
-  const { rateUsdt, rateBcv, profitMargin, setRateUsdt, setRateBcv, setProfitMargin, saveTodayRates } = useConfigStore()
+  const { 
+    rateUsdt, rateBcv, profitMargin, 
+    setRateUsdt, setRateBcv, setProfitMargin, 
+    isCustomUsdt, isCustomBcv, setIsCustomUsdt, setIsCustomBcv,
+    saveTodayRates 
+  } = useConfigStore()
   const { exportRates } = useExport()
 
-  const [isFetchingBcv, setIsFetchingBcv] = useState(false)
-  const [isFetchingUsdt, setIsFetchingUsdt] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   const currentGap = calculateGap(rateUsdt, rateBcv)
-
-  const [isCustomUsdt, setIsCustomUsdt] = useState(false)
-  const [isCustomBcv, setIsCustomBcv] = useState(false)
-
-  const handleFetchUsdt = async (silent = false) => {
-    setIsFetchingUsdt(true)
-    const { rate, error } = await fetchUsdtRate()
-    setIsFetchingUsdt(false)
-
-    if (error) {
-      if (!silent) toast.error(error)
-    } else if (rate) {
-      setRateUsdt(rate)
-      if (!silent) toast.success(`Tasa USDT actualizada: ${rate} Bs`)
-    }
-  }
-
-  const handleFetchBcv = async (silent = false) => {
-    setIsFetchingBcv(true)
-    const { rate, error } = await fetchBcvRate()
-    setIsFetchingBcv(false)
-
-    if (error) {
-      if (!silent) toast.error(error)
-    } else if (rate) {
-      setRateBcv(rate)
-      if (!silent) toast.success(`Tasa BCV actualizada: ${rate} Bs`)
-    }
-  }
-
-  useEffect(() => {
-    if (!isCustomUsdt) {
-      handleFetchUsdt(true)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCustomUsdt])
-
-  useEffect(() => {
-    if (!isCustomBcv) {
-      handleFetchBcv(true)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCustomBcv])
 
   const handleSaveRates = async () => {
     if (!user) return
@@ -135,7 +95,7 @@ export default function RatesPage() {
                   value={rateUsdt || ''} 
                   onChange={(e) => setRateUsdt(Number(e.target.value))} 
                   className="pl-9 pr-9 bg-background border-border font-medium disabled:opacity-50"
-                  disabled={!isCustomUsdt || isFetchingUsdt}
+                  disabled={!isCustomUsdt}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">
                   {isCustomUsdt ? <Unlock className="w-4 h-4 text-amber-400" /> : <Lock className="w-4 h-4 text-emerald-400" />}
@@ -165,7 +125,7 @@ export default function RatesPage() {
                   value={rateBcv || ''} 
                   onChange={(e) => setRateBcv(Number(e.target.value))} 
                   className="pl-9 pr-9 bg-background border-border font-medium disabled:opacity-50"
-                  disabled={!isCustomBcv || isFetchingBcv}
+                  disabled={!isCustomBcv}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">
                   {isCustomBcv ? <Unlock className="w-4 h-4 text-amber-400" /> : <Lock className="w-4 h-4 text-emerald-400" />}

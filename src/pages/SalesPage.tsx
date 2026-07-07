@@ -47,8 +47,8 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 const PAYMENT_METHODS = [
-  { id: 'cash_usd', name: '💵 Efectivo ($)' },
-  { id: 'bcv_bs', name: '🏦 Tasa BCV (Bs)' },
+  { id: 'cash_usd', name: 'Efectivo ($)' },
+  { id: 'bcv_bs', name: 'Tasa BCV (Bs)' },
 ]
 
 export default function SalesPage() {
