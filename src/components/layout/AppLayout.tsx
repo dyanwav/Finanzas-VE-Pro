@@ -22,7 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
@@ -43,10 +43,16 @@ const navItems = [
 export default function AppLayout() {
   const location = useLocation()
   const { user, signOut } = useAuthStore()
-  const { rateUsdt, rateBcv } = useConfigStore()
+  const { rateUsdt, rateBcv, loadTodayRates } = useConfigStore()
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  useEffect(() => {
+    if (user?.id) {
+      loadTodayRates(user.id)
+    }
+  }, [user?.id, loadTodayRates])
 
   const gap = calculateGap(rateUsdt, rateBcv)
 

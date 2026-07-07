@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRates, fetchBcvRate } from '@/hooks/useRates'
 import { useConfigStore } from '@/stores/config-store'
 import { useAuthStore } from '@/stores/auth-store'
@@ -10,8 +10,9 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
+import { Switch } from '@/components/ui/switch'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import { TrendingUp, RefreshCw, Save, Download, Trash2, Loader2, AlertTriangle } from 'lucide-react'
+import { TrendingUp, Save, Download, Trash2, Loader2, AlertTriangle, Lock, Unlock } from 'lucide-react'
 import { format } from 'date-fns'
 
 export default function RatesPage() {
@@ -25,18 +26,27 @@ export default function RatesPage() {
 
   const currentGap = calculateGap(rateUsdt, rateBcv)
 
-  const handleFetchBcv = async () => {
+  const [isCustomBcv, setIsCustomBcv] = useState(false)
+
+  const handleFetchBcv = async (silent = false) => {
     setIsFetching(true)
     const { rate, error } = await fetchBcvRate()
     setIsFetching(false)
 
     if (error) {
-      toast.error(error)
+      if (!silent) toast.error(error)
     } else if (rate) {
       setRateBcv(rate)
-      toast.success(`Tasa BCV actualizada: ${rate} Bs`)
+      if (!silent) toast.success(`Tasa BCV actualizada: ${rate} Bs`)
     }
   }
+
+  useEffect(() => {
+    if (!isCustomBcv) {
+      handleFetchBcv(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCustomBcv])
 
   const handleSaveRates = async () => {
     if (!user) return
@@ -98,10 +108,16 @@ export default function RatesPage() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <Label className="text-zinc-400 uppercase tracking-wider text-xs font-bold">Tasa Oficial BCV (Bs)</Label>
-                <Button variant="ghost" size="sm" onClick={handleFetchBcv} disabled={isFetching} className="h-6 text-[10px] text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 px-2">
-                  {isFetching ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-                  Auto-Obtener
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Switch 
+                    id="custom-rate" 
+                    checked={isCustomBcv} 
+                    onCheckedChange={(checked: boolean) => setIsCustomBcv(checked)} 
+                  />
+                  <Label htmlFor="custom-rate" className="text-[10px] text-zinc-400 cursor-pointer">
+                    Usar tasa personalizada
+                  </Label>
+                </div>
               </div>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 font-bold">Bs</span>
@@ -110,8 +126,12 @@ export default function RatesPage() {
                   step="0.01" 
                   value={rateBcv || ''} 
                   onChange={(e) => setRateBcv(Number(e.target.value))} 
-                  className="pl-9 bg-background border-border font-medium"
+                  className="pl-9 pr-9 bg-background border-border font-medium disabled:opacity-50"
+                  disabled={!isCustomBcv || isFetching}
                 />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">
+                  {isCustomBcv ? <Unlock className="w-4 h-4 text-amber-400" /> : <Lock className="w-4 h-4 text-emerald-400" />}
+                </span>
               </div>
             </div>
 

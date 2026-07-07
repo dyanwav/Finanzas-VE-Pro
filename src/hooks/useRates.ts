@@ -56,8 +56,7 @@ export function useRates() {
  */
 export async function fetchBcvRate(): Promise<{ rate: number | null; error?: string }> {
   try {
-    // Use pydolarve API as a proxy for BCV rate
-    const response = await fetch('https://pydolarve.org/api/v2/dollar?page=bcv', {
+    const response = await fetch('https://ve.dolarapi.com/v1/dolares/oficial', {
       signal: AbortSignal.timeout(5000),
     })
 
@@ -67,8 +66,8 @@ export async function fetchBcvRate(): Promise<{ rate: number | null; error?: str
 
     const data = await response.json()
 
-    // The API returns monitors.usd.price for the USD/VES rate
-    const bcvRate = data?.monitors?.usd?.price
+    // The API returns 'promedio' for the BCV rate
+    const bcvRate = data?.promedio
     if (typeof bcvRate === 'number' && bcvRate > 0) {
       return { rate: bcvRate }
     }
