@@ -48,9 +48,10 @@ export function calculateProductPricing(
   costUsd: number,
   marginPercent: number,
   rateUsdt: number,
-  rateBcv: number
+  rateBcv: number,
+  customEffectivePrice?: number | null
 ): ProductPricing {
-  const effectivePriceUsd = calculateEffectivePrice(costUsd, marginPercent)
+  const effectivePriceUsd = customEffectivePrice ?? calculateEffectivePrice(costUsd, marginPercent)
   const priceBs = calculateBsPrice(effectivePriceUsd, rateUsdt)
   const priceBcvUsd = calculateBcvEquivalent(priceBs, rateBcv)
   const costBs = calculateBsPrice(costUsd, rateUsdt)

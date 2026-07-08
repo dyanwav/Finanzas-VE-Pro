@@ -22,17 +22,24 @@ import { Plus, Search, Download, Trash2, Package, Loader2 } from 'lucide-react'
 const productSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   cost_usd: z.coerce.number().positive('El costo debe ser mayor a 0'),
+  custom_effective_price: z.union([z.string(), z.number()]).optional().nullable()
+    .transform(v => {
+       if (v === '' || v === null || v === undefined) return null;
+       const num = Number(v);
+       return isNaN(num) ? null : num;
+    }),
   category_id: z.string().optional(),
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
 
 export default function ProductsPage() {
-  const { products, categories, loading, search, setSearch, categoryFilter, setCategoryFilter, createProduct, deleteProduct, createCategory } = useProducts()
+  const { products, categories, loading, search, setSearch, categoryFilter, setCategoryFilter, createProduct, updateProduct, deleteProduct, createCategory } = useProducts()
   const { rateUsdt, rateBcv, profitMargin } = useConfigStore()
   const { exportProducts } = useExport()
 
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [newCategoryName, setNewCategoryName] = useState('')
 
   const form = useForm<ProductFormValues>({
@@ -41,9 +48,27 @@ export default function ProductsPage() {
     defaultValues: {
       name: '',
       cost_usd: 0,
+      custom_effective_price: null,
       category_id: 'none',
     }
   })
+
+  const handleCreate = () => {
+    setEditingProductId(null)
+    form.reset({ name: '', cost_usd: 0, custom_effective_price: null, category_id: 'none' })
+    setIsDialogOpen(true)
+  }
+
+  const handleEdit = (p: any) => {
+    setEditingProductId(p.id)
+    form.reset({
+      name: p.name,
+      cost_usd: p.cost_usd,
+      custom_effective_price: p.custom_effective_price || null,
+      category_id: p.category_id || 'none'
+    })
+    setIsDialogOpen(true)
+  }
 
   const onSubmit = async (values: ProductFormValues) => {
     let catId = values.category_id === 'none' ? undefined : values.category_id
@@ -58,18 +83,28 @@ export default function ProductsPage() {
       setNewCategoryName('')
     }
 
-    const { error } = await createProduct({
+    const payload = {
       name: values.name,
       cost_usd: values.cost_usd,
+      custom_effective_price: values.custom_effective_price,
       category_id: catId || null,
-    })
+    }
 
-    if (error) {
-      toast.error(error)
+    if (editingProductId) {
+      const { error } = await updateProduct(editingProductId, payload)
+      if (error) toast.error(error)
+      else {
+        toast.success('Producto actualizado exitosamente')
+        setIsDialogOpen(false)
+      }
     } else {
-      toast.success('Producto creado exitosamente')
-      setIsCreateOpen(false)
-      form.reset()
+      const { error } = await createProduct(payload)
+      if (error) toast.error(error)
+      else {
+        toast.success('Producto creado exitosamente')
+        setIsDialogOpen(false)
+        form.reset()
+      }
     }
   }
 
@@ -88,16 +123,16 @@ export default function ProductsPage() {
             <Download className="w-4 h-4 mr-2" />
             Exportar CSV
           </Button>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger render={
-              <Button className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-500 text-white">
+              <Button className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-500 text-white" onClick={handleCreate}>
                 <Plus className="w-4 h-4 mr-2" />
                 Nuevo Producto
               </Button>
             } />
             <DialogContent className="sm:max-w-[425px] border-border bg-card">
               <DialogHeader>
-                <DialogTitle>Añadir Producto</DialogTitle>
+                <DialogTitle>{editingProductId ? 'Editar Producto' : 'Añadir Producto'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4 py-4">
                 <div className="space-y-2">
@@ -106,15 +141,22 @@ export default function ProductsPage() {
                   {form.formState.errors.name && <p className="text-sm text-rose-500">{form.formState.errors.name.message}</p>}
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="cost_usd">Costo Unitario (USD)</Label>
-                  <Input id="cost_usd" type="number" step="0.01" {...form.register('cost_usd')} className="border-border bg-background" />
-                  {form.formState.errors.cost_usd && <p className="text-sm text-rose-500">{form.formState.errors.cost_usd.message}</p>}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cost_usd">Costo Unitario (USD)</Label>
+                    <Input id="cost_usd" type="number" step="0.01" {...form.register('cost_usd')} className="border-border bg-background" />
+                    {form.formState.errors.cost_usd && <p className="text-sm text-rose-500">{form.formState.errors.cost_usd.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="custom_effective_price">Precio Ef. Manual (Opcional)</Label>
+                    <Input id="custom_effective_price" type="number" step="0.01" {...form.register('custom_effective_price')} placeholder="Automático" className="border-border bg-background" />
+                    {form.formState.errors.custom_effective_price && <p className="text-sm text-rose-500">{form.formState.errors.custom_effective_price.message}</p>}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="category">Categoría</Label>
-                  <Select onValueChange={(val) => form.setValue('category_id', val || 'none')} defaultValue="none">
+                  <Select onValueChange={(val) => form.setValue('category_id', val || 'none')} defaultValue={form.getValues('category_id') || 'none'}>
                     <SelectTrigger className="border-border bg-background">
                       <SelectValue placeholder="Selecciona una categoría">
                         {form.watch('category_id') === 'none' || !form.watch('category_id') ? 'Sin categoría' :
@@ -199,7 +241,7 @@ export default function ProductsPage() {
                   <TableHead className="font-bold">Producto</TableHead>
                   <TableHead className="font-bold text-center">Costo USD</TableHead>
                   <TableHead className="font-bold text-center">Costo Bs</TableHead>
-                  <TableHead className="font-bold text-center text-emerald-400">Precio Ef. ($)</TableHead>
+                  <TableHead className="font-bold text-center text-emerald-400">Precio Efectivo. ($)</TableHead>
                   <TableHead className="font-bold text-center text-cyan-400">Precio Bs</TableHead>
                   <TableHead className="font-bold text-center text-amber-400">Precio BCV ($)</TableHead>
                   <TableHead className="font-bold text-right">Ganancia ($)</TableHead>
@@ -208,7 +250,7 @@ export default function ProductsPage() {
               </TableHeader>
               <TableBody>
                 {products.map((p) => {
-                  const pricing = calculateProductPricing(p.cost_usd, profitMargin, rateUsdt, rateBcv)
+                  const pricing = calculateProductPricing(p.cost_usd, profitMargin, rateUsdt, rateBcv, p.custom_effective_price)
                   return (
                     <TableRow key={p.id} className="border-border hover:bg-zinc-800/50 transition-colors">
                       <TableCell>
@@ -222,25 +264,32 @@ export default function ProductsPage() {
                       <TableCell className="text-center font-semibold text-amber-400">{formatCurrency(pricing.priceBcvUsd)}</TableCell>
                       <TableCell className="text-right text-zinc-400">{formatCurrency(pricing.profitUsd)}</TableCell>
                       <TableCell>
-                        <AlertDialog>
-                          <AlertDialogTrigger render={
-                            <Button variant="ghost" size="icon" className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 h-8 w-8">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          } />
-                          <AlertDialogContent className="bg-card border-border">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Esto eliminará "{p.name}" permanentemente. Las ventas asociadas no perderán los datos históricos del precio en ese momento.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="border-border">Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteProduct(p.id)} className="bg-rose-600 hover:bg-rose-500 text-white">Eliminar</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <div className="flex justify-end items-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(p)} className="text-zinc-400 hover:text-zinc-300 h-8 w-8">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger
+                              render={
+                                <Button variant="ghost" size="icon" className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 h-8 w-8">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              }
+                            />
+                            <AlertDialogContent className="bg-card border-border">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esto eliminará "{p.name}" permanentemente. Las ventas asociadas no perderán los datos históricos del precio en ese momento.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="border-border">Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteProduct(p.id)} className="bg-rose-600 hover:bg-rose-500 text-white">Eliminar</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )
@@ -252,7 +301,7 @@ export default function ProductsPage() {
           {/* Mobile Cards */}
           <div className="md:hidden divide-y divide-border">
             {products.map((p) => {
-              const pricing = calculateProductPricing(p.cost_usd, profitMargin, rateUsdt, rateBcv)
+              const pricing = calculateProductPricing(p.cost_usd, profitMargin, rateUsdt, rateBcv, p.custom_effective_price)
               return (
                 <div key={p.id} className="p-4 space-y-3">
                   <div className="flex justify-between items-start">
@@ -260,23 +309,30 @@ export default function ProductsPage() {
                       <h3 className="font-medium text-zinc-200">{p.name}</h3>
                       <span className="text-xs text-zinc-500">{p.category?.name || 'Sin categoría'}</span>
                     </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger render={
-                        <Button variant="ghost" size="icon" className="text-rose-500 h-8 w-8">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      } />
-                      <AlertDialogContent className="bg-card border-border w-[90%] rounded-xl">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>¿Eliminar?</AlertDialogTitle>
-                          <AlertDialogDescription>¿Seguro que deseas eliminar "{p.name}"?</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel className="border-border">Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteProduct(p.id)} className="bg-rose-600 text-white">Eliminar</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <div className="flex items-center">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(p)} className="text-zinc-400 h-8 w-8">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger
+                          render={
+                            <Button variant="ghost" size="icon" className="text-rose-500 h-8 w-8">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          }
+                        />
+                        <AlertDialogContent className="bg-card border-border w-[90%] rounded-xl">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Eliminar?</AlertDialogTitle>
+                            <AlertDialogDescription>¿Seguro que deseas eliminar "{p.name}"?</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel className="border-border">Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteProduct(p.id)} className="bg-rose-600 text-white">Eliminar</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm bg-background p-3 rounded-lg border border-border">
                     <div>

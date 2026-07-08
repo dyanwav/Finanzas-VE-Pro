@@ -9,6 +9,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -42,7 +43,7 @@ import {
 import { useConfigStore } from '@/stores/config-store'
 import { type PaymentType } from '@/types'
 import { format } from 'date-fns'
-import { Download, Loader2, ShoppingBag, Trash2 } from 'lucide-react'
+import { Download, Loader2, ShoppingBag, Trash2, Plus, Minus } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -52,7 +53,7 @@ const PAYMENT_METHODS = [
 ]
 
 export default function SalesPage() {
-  const { sales, loading: salesLoading, deleteSale, createSale } = useSales()
+  const { sales, loading: salesLoading, deleteSale, createSale, updateSale } = useSales()
   const { allProducts } = useProducts()
   const { rateUsdt, profitMargin } = useConfigStore()
   const { exportSales } = useExport()
@@ -62,6 +63,11 @@ export default function SalesPage() {
   const [paymentType, setPaymentType] = useState<PaymentType>('cash_usd')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  const [editingSale, setEditingSale] = useState<any>(null)
+  const [editQuantity, setEditQuantity] = useState<number>(1)
+  const [editPaymentType, setEditPaymentType] = useState<PaymentType>('cash_usd')
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+
   const selectedProduct = allProducts.find(p => p.id === selectedProductId)
 
   // Preview Calculations
@@ -70,7 +76,7 @@ export default function SalesPage() {
   let previewPriceUsd = 0
 
   if (selectedProduct && rateUsdt > 0) {
-    const effectiveUsd = calculateEffectivePrice(
+    const effectiveUsd = selectedProduct.custom_effective_price ?? calculateEffectivePrice(
       selectedProduct.cost_usd,
       profitMargin,
     )
@@ -81,6 +87,29 @@ export default function SalesPage() {
       previewRevenue = effectiveUsd * quantity
     } else {
       previewRevenue = (previewPriceBs / rateUsdt) * quantity
+    }
+  }
+
+  const handleEditClick = (sale: any) => {
+    setEditingSale(sale)
+    setEditQuantity(sale.quantity)
+    setEditPaymentType(sale.payment_type)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleUpdateSale = async () => {
+    if (!editingSale) return
+    setIsSubmitting(true)
+    const { error } = await updateSale(editingSale.id, {
+      quantity: editQuantity,
+      payment_type: editPaymentType
+    })
+    setIsSubmitting(false)
+    if (error) {
+      toast.error(error)
+    } else {
+      toast.success('Venta actualizada')
+      setIsEditDialogOpen(false)
     }
   }
 
@@ -141,7 +170,7 @@ export default function SalesPage() {
                     {allProducts.find(p => p.id === selectedProductId)?.name}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent alignItemWithTrigger={false} className="p-1">
+                <SelectContent className="p-1">
                   {allProducts.map(p => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}
@@ -154,15 +183,34 @@ export default function SalesPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Cantidad</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={quantity}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setQuantity(Number(e.target.value) || 1)
-                  }
-                  className="bg-background border-border"
-                />
+                <div className="flex items-center">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-r-none border-r-0 h-10 w-10 bg-background border-border text-zinc-400 hover:text-zinc-200"
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={quantity}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setQuantity(Number(e.target.value) || 1)
+                    }
+                    className="rounded-none border-x-0 h-10 text-center bg-background border-border focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-l-none border-l-0 h-10 w-10 bg-background border-border text-zinc-400 hover:text-zinc-200"
+                    onClick={() => setQuantity(quantity + 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Medio de Pago</Label>
@@ -177,7 +225,7 @@ export default function SalesPage() {
                       {paymentType ? PAYMENT_METHODS.find(p => p.id === paymentType)?.name : 'Medio de pago'}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent alignItemWithTrigger={false} className="p-1">
+                  <SelectContent className="p-1">
                     {PAYMENT_METHODS.map(method => (
                       <SelectItem key={method.id} value={method.id}>
                         {method.name}
@@ -305,42 +353,47 @@ export default function SalesPage() {
                             {formatCurrency(res.profit)}
                           </TableCell>
                           <TableCell>
-                            <AlertDialog>
-                              <AlertDialogTrigger
-                                render={
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 h-8 w-8"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                }
-                              />
-                              <AlertDialogContent className="bg-card border-border">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>
-                                    ¿Eliminar venta?
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta acción descontará el ingreso y la
-                                    ganancia de tu dashboard de forma
-                                    permanente.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel className="border-border">
-                                    Cancelar
-                                  </AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => deleteSale(s.id)}
-                                    className="bg-rose-600 hover:bg-rose-500 text-white"
-                                  >
-                                    Eliminar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            <div className="flex justify-end items-center gap-1">
+                              <Button variant="ghost" size="icon" onClick={() => handleEditClick(s)} className="text-zinc-400 hover:text-zinc-300 h-8 w-8">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger
+                                  render={
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 h-8 w-8"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  }
+                                />
+                                <AlertDialogContent className="bg-card border-border">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      ¿Eliminar venta?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta acción descontará el ingreso y la
+                                      ganancia de tu dashboard de forma
+                                      permanente.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel className="border-border">
+                                      Cancelar
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => deleteSale(s.id)}
+                                      className="bg-rose-600 hover:bg-rose-500 text-white"
+                                    >
+                                      Eliminar
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </TableCell>
                         </TableRow>
                       )
@@ -396,37 +449,42 @@ export default function SalesPage() {
                             +{formatCurrency(res.profit)}
                           </span>
                         </div>
-                        <AlertDialog>
-                          <AlertDialogTrigger
-                            render={
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-rose-500 h-8 w-8 -mr-2"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            }
-                          />
-                          <AlertDialogContent className="bg-card border-border w-[90%] rounded-xl">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                ¿Eliminar venta?
-                              </AlertDialogTitle>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="border-border">
-                                Cancelar
-                              </AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteSale(s.id)}
-                                className="bg-rose-600 text-white"
-                              >
-                                Eliminar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleEditClick(s)} className="text-zinc-400 h-8 w-8 -mr-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger
+                              render={
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-rose-500 h-8 w-8 -mr-2"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              }
+                            />
+                            <AlertDialogContent className="bg-card border-border w-[90%] rounded-xl">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  ¿Eliminar venta?
+                                </AlertDialogTitle>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="border-border">
+                                  Cancelar
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteSale(s.id)}
+                                  className="bg-rose-600 text-white"
+                                >
+                                  Eliminar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                     </div>
                   )
@@ -436,6 +494,74 @@ export default function SalesPage() {
           )}
         </div>
       </div>
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px] border-border bg-card">
+          <DialogHeader>
+            <DialogTitle>Editar Venta</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Producto</Label>
+              <Input disabled value={editingSale?.product_name_snapshot || ''} className="bg-background border-border text-zinc-500" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Cantidad</Label>
+                <div className="flex items-center">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-r-none border-r-0 h-10 w-10 bg-background border-border text-zinc-400 hover:text-zinc-200"
+                    onClick={() => setEditQuantity(Math.max(1, editQuantity - 1))}
+                    disabled={editQuantity <= 1}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={editQuantity}
+                    onChange={(e) => setEditQuantity(Number(e.target.value) || 1)}
+                    className="rounded-none border-x-0 h-10 text-center bg-background border-border focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-l-none border-l-0 h-10 w-10 bg-background border-border text-zinc-400 hover:text-zinc-200"
+                    onClick={() => setEditQuantity(editQuantity + 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Medio de Pago</Label>
+                <Select
+                  value={editPaymentType}
+                  onValueChange={(v) => setEditPaymentType(v as PaymentType)}
+                >
+                  <SelectTrigger className="bg-background border-border w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_METHODS.map(method => (
+                      <SelectItem key={method.id} value={method.id}>
+                        {method.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleUpdateSale} disabled={isSubmitting} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white">
+              {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              Guardar Cambios
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

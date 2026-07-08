@@ -8,6 +8,7 @@ interface ConfigState extends RateConfig {
   loading: boolean
   isCustomUsdt: boolean
   isCustomBcv: boolean
+  lastUpdatedAt: string | null
 
   // Actions
   setRateUsdt: (rate: number) => void
@@ -31,6 +32,7 @@ export const useConfigStore = create<ConfigState>()(
       loading: false,
       isCustomUsdt: false,
       isCustomBcv: false,
+      lastUpdatedAt: null,
 
       setRateUsdt: (rate) => set({ rateUsdt: rate }),
       setRateBcv: (rate) => set({ rateBcv: rate }),
@@ -47,15 +49,26 @@ export const useConfigStore = create<ConfigState>()(
 
       fetchLiveRates: async () => {
         const { isCustomUsdt, isCustomBcv } = get()
+        let updated = false
         
         if (!isCustomUsdt) {
           const { rate } = await fetchUsdtRate()
-          if (rate) set({ rateUsdt: rate })
+          if (rate) {
+            set({ rateUsdt: rate })
+            updated = true
+          }
         }
         
         if (!isCustomBcv) {
           const { rate } = await fetchBcvRate()
-          if (rate) set({ rateBcv: rate })
+          if (rate) {
+            set({ rateBcv: rate })
+            updated = true
+          }
+        }
+        
+        if (updated) {
+          set({ lastUpdatedAt: new Date().toISOString() })
         }
       },
 

@@ -27,6 +27,7 @@ export interface Product {
   category_id: string | null
   name: string
   cost_usd: number
+  custom_effective_price?: number | null
   created_at: string
   updated_at: string
   // Joined

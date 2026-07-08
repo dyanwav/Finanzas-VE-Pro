@@ -44,6 +44,11 @@ export function useSales() {
     if (!user) return { error: 'No autenticado' }
     if (rateUsdt <= 0 || rateBcv <= 0) return { error: 'Configura las tasas cambiarias primero' }
 
+    let actualMargin = profitMargin;
+    if (product.custom_effective_price && product.custom_effective_price > 0 && product.cost_usd > 0) {
+      actualMargin = 100 * (1 - (product.cost_usd / product.custom_effective_price));
+    }
+
     const { error } = await insforge.database
       .from('sales')
       .insert([{
@@ -53,7 +58,7 @@ export function useSales() {
         payment_type: paymentType,
         rate_usdt_at_sale: rateUsdt,
         rate_bcv_at_sale: rateBcv,
-        margin_at_sale: profitMargin,
+        margin_at_sale: actualMargin,
         product_name_snapshot: product.name,
         product_cost_snapshot: product.cost_usd,
         sale_date: new Date().toISOString(),
@@ -63,6 +68,19 @@ export function useSales() {
     await fetchSales()
     return {}
   }, [user, rateUsdt, rateBcv, profitMargin, fetchSales])
+
+  const updateSale = useCallback(async (id: string, updates: Partial<Pick<Sale, 'quantity' | 'payment_type'>>) => {
+    if (!user) return { error: 'No autenticado' }
+    const { error } = await insforge.database
+      .from('sales')
+      .update(updates)
+      .eq('id', id)
+      .eq('user_id', user.id)
+
+    if (error) return { error: error.message }
+    await fetchSales()
+    return {}
+  }, [user, fetchSales])
 
   const deleteSale = useCallback(async (id: string) => {
     if (!user) return { error: 'No autenticado' }
@@ -89,6 +107,7 @@ export function useSales() {
     paymentFilter,
     setPaymentFilter,
     createSale,
+    updateSale,
     deleteSale,
     refreshSales: fetchSales,
   }

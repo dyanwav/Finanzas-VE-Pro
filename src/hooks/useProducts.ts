@@ -50,7 +50,7 @@ export function useProducts() {
     return {}
   }, [user, fetchProducts])
 
-  const updateProduct = useCallback(async (id: string, updates: Partial<Pick<Product, 'name' | 'cost_usd' | 'category_id'>>) => {
+  const updateProduct = useCallback(async (id: string, updates: Partial<Pick<Product, 'name' | 'cost_usd' | 'category_id' | 'custom_effective_price'>>) => {
     if (!user) return { error: 'No autenticado' }
     const { error } = await insforge.database
       .from('products')

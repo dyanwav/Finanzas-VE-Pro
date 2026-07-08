@@ -19,7 +19,7 @@ export default function RatesPage() {
   const { user } = useAuthStore()
   const { rateHistory, loading: ratesLoading, deleteRate, refreshRates } = useRates()
   const { 
-    rateUsdt, rateBcv, profitMargin, 
+    rateUsdt, rateBcv, profitMargin, lastUpdatedAt,
     setRateUsdt, setRateBcv, setProfitMargin, 
     isCustomUsdt, isCustomBcv, setIsCustomUsdt, setIsCustomBcv,
     saveTodayRates 
@@ -157,6 +157,14 @@ export default function RatesPage() {
                   {formatPercent(currentGap)}
                 </span>
               </div>
+              {lastUpdatedAt && (
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-zinc-500">Última actualización:</span>
+                  <span className="text-zinc-400">
+                    {format(new Date(lastUpdatedAt), "dd/MM/yyyy HH:mm")}
+                  </span>
+                </div>
+              )}
             </div>
 
             <Button 

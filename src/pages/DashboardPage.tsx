@@ -31,7 +31,7 @@ export default function DashboardPage() {
         </div>
         
         <Tabs value={period} onValueChange={(v: string) => setPeriod(v as PeriodFilter)} className="w-full md:w-auto">
-          <TabsList className="grid w-full grid-cols-4 bg-zinc-900/50 border border-border">
+          <TabsList className="grid w-full grid-cols-4 bg-zinc-900/50">
             <TabsTrigger value="today">Hoy</TabsTrigger>
             <TabsTrigger value="week">Semana</TabsTrigger>
             <TabsTrigger value="month">Mes</TabsTrigger>
@@ -41,7 +41,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
           title="Total Invertido" 
           value={formatCurrency(kpis.totalInvested)} 
