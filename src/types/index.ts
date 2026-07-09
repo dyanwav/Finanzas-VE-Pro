@@ -20,12 +20,26 @@ export interface Category {
 
 export type CategoryInsert = Omit<Category, 'id' | 'created_at'>
 
+// ---- Customers ----
+export interface Customer {
+  id: string
+  user_id: string
+  name: string
+  email: string | null
+  phone: string | null
+  document_id: string | null
+  created_at: string
+}
+
+export type CustomerInsert = Omit<Customer, 'id' | 'created_at'>
+
 // ---- Products ----
 export interface Product {
   id: string
   user_id: string
   category_id: string | null
   name: string
+  sku?: string | null
   cost_usd: number
   custom_effective_price?: number | null
   created_at: string
@@ -56,6 +70,7 @@ export interface Sale {
   id: string
   user_id: string
   product_id: string | null
+  customer_id?: string | null
   quantity: number
   payment_type: PaymentType
   rate_usdt_at_sale: number
@@ -67,9 +82,10 @@ export interface Sale {
   created_at: string
   // Joined
   product?: Product | null
+  customer?: Customer | null
 }
 
-export type SaleInsert = Omit<Sale, 'id' | 'created_at' | 'product'>
+export type SaleInsert = Omit<Sale, 'id' | 'created_at' | 'product' | 'customer'>
 
 // ---- Calculated Pricing ----
 export interface ProductPricing {

@@ -34,6 +34,7 @@ import {
 import { useExport } from '@/hooks/useExport'
 import { useProducts } from '@/hooks/useProducts'
 import { useSales } from '@/hooks/useSales'
+import { useCustomers } from '@/hooks/useCustomers'
 import {
   calculateBsPrice,
   calculateEffectivePrice,
@@ -41,7 +42,7 @@ import {
   formatCurrency,
 } from '@/lib/calculations'
 import { useConfigStore } from '@/stores/config-store'
-import { type PaymentType } from '@/types'
+import type { PaymentType, Sale } from '@/types'
 import { format } from 'date-fns'
 import { Download, Loader2, ShoppingBag, Trash2, Plus, Minus } from 'lucide-react'
 import { useState } from 'react'
@@ -55,15 +56,17 @@ const PAYMENT_METHODS = [
 export default function SalesPage() {
   const { sales, loading: salesLoading, deleteSale, createSale, updateSale } = useSales()
   const { allProducts } = useProducts()
+  const { allCustomers } = useCustomers()
   const { rateUsdt, profitMargin } = useConfigStore()
   const { exportSales } = useExport()
 
   const [selectedProductId, setSelectedProductId] = useState<string>('')
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('none')
   const [quantity, setQuantity] = useState<number>(1)
   const [paymentType, setPaymentType] = useState<PaymentType>('cash_usd')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const [editingSale, setEditingSale] = useState<any>(null)
+  const [editingSale, setEditingSale] = useState<Sale | null>(null)
   const [editQuantity, setEditQuantity] = useState<number>(1)
   const [editPaymentType, setEditPaymentType] = useState<PaymentType>('cash_usd')
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -90,7 +93,7 @@ export default function SalesPage() {
     }
   }
 
-  const handleEditClick = (sale: any) => {
+  const handleEditClick = (sale: Sale) => {
     setEditingSale(sale)
     setEditQuantity(sale.quantity)
     setEditPaymentType(sale.payment_type)
@@ -116,7 +119,8 @@ export default function SalesPage() {
   const handleRegisterSale = async () => {
     if (!selectedProduct) return
     setIsSubmitting(true)
-    const { error } = await createSale(selectedProduct, quantity, paymentType)
+    const custId = selectedCustomerId === 'none' ? undefined : selectedCustomerId
+    const { error } = await createSale(selectedProduct, quantity, paymentType, custId)
     setIsSubmitting(false)
 
     if (error) {
@@ -170,10 +174,32 @@ export default function SalesPage() {
                     {allProducts.find(p => p.id === selectedProductId)?.name}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="p-1">
+                <SelectContent className="p-1" alignItemWithTrigger={true}>
                   {allProducts.map(p => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Cliente (Opcional)</Label>
+              <Select
+                value={selectedCustomerId}
+                onValueChange={v => setSelectedCustomerId(v || 'none')}
+              >
+                <SelectTrigger className="bg-background border-border w-full">
+                  <SelectValue placeholder="Selecciona un cliente">
+                    {selectedCustomerId === 'none' ? 'Venta Rápida' : allCustomers.find(c => c.id === selectedCustomerId)?.name}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="p-1" alignItemWithTrigger={true}>
+                  <SelectItem value="none">Venta Rápida</SelectItem>
+                  {allCustomers.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -225,7 +251,7 @@ export default function SalesPage() {
                       {paymentType ? PAYMENT_METHODS.find(p => p.id === paymentType)?.name : 'Medio de pago'}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="p-1">
+                  <SelectContent className="p-1" alignItemWithTrigger={true}>
                     {PAYMENT_METHODS.map(method => (
                       <SelectItem key={method.id} value={method.id}>
                         {method.name}
@@ -237,7 +263,7 @@ export default function SalesPage() {
             </div>
 
             {selectedProduct && (
-              <div className="mt-4 p-4 rounded-xl bg-zinc-900/50 border border-border space-y-3 animate-slide-up">
+              <div className="mt-4 p-4 rounded-xl card-glass space-y-3 animate-slide-up">
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-400">Precio Unitario:</span>
                   <span className="font-medium text-zinc-200">
@@ -296,6 +322,7 @@ export default function SalesPage() {
                     <TableRow className="border-border hover:bg-transparent">
                       <TableHead className="font-bold">Fecha</TableHead>
                       <TableHead className="font-bold">Producto</TableHead>
+                      <TableHead className="font-bold">Cliente</TableHead>
                       <TableHead className="font-bold text-center">
                         Cant.
                       </TableHead>
@@ -331,6 +358,9 @@ export default function SalesPage() {
                           </TableCell>
                           <TableCell className="font-medium text-zinc-200">
                             {s.product_name_snapshot}
+                          </TableCell>
+                          <TableCell className="text-zinc-400 text-sm">
+                            {s.customer?.name || 'Venta Rápida'}
                           </TableCell>
                           <TableCell className="text-center">
                             {s.quantity}
@@ -422,6 +452,7 @@ export default function SalesPage() {
                         <h4 className="font-medium text-zinc-200 leading-none">
                           {s.product_name_snapshot}
                         </h4>
+                        <div className="text-xs text-zinc-400 mt-0.5">{s.customer?.name || 'Venta Rápida'}</div>
                         <div className="flex items-center gap-2 text-xs text-zinc-500">
                           <span>
                             {format(new Date(s.sale_date), 'dd/MM/yy')}
@@ -543,7 +574,7 @@ export default function SalesPage() {
                   <SelectTrigger className="bg-background border-border w-full">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="p-1" alignItemWithTrigger={true}>
                     {PAYMENT_METHODS.map(method => (
                       <SelectItem key={method.id} value={method.id}>
                         {method.name}

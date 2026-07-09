@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useProducts } from '@/hooks/useProducts'
+import type { Product } from '@/types'
 import { useConfigStore } from '@/stores/config-store'
 import { useExport } from '@/hooks/useExport'
 import { calculateProductPricing, formatCurrency } from '@/lib/calculations'
@@ -21,6 +22,7 @@ import { Plus, Search, Download, Trash2, Package, Loader2 } from 'lucide-react'
 
 const productSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+  sku: z.string().optional().nullable(),
   cost_usd: z.coerce.number().positive('El costo debe ser mayor a 0'),
   custom_effective_price: z.union([z.string(), z.number()]).optional().nullable()
     .transform(v => {
@@ -47,6 +49,7 @@ export default function ProductsPage() {
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '',
+      sku: '',
       cost_usd: 0,
       custom_effective_price: null,
       category_id: 'none',
@@ -55,14 +58,15 @@ export default function ProductsPage() {
 
   const handleCreate = () => {
     setEditingProductId(null)
-    form.reset({ name: '', cost_usd: 0, custom_effective_price: null, category_id: 'none' })
+    form.reset({ name: '', sku: '', cost_usd: 0, custom_effective_price: null, category_id: 'none' })
     setIsDialogOpen(true)
   }
 
-  const handleEdit = (p: any) => {
+  const handleEdit = (p: Product) => {
     setEditingProductId(p.id)
     form.reset({
       name: p.name,
+      sku: p.sku || '',
       cost_usd: p.cost_usd,
       custom_effective_price: p.custom_effective_price || null,
       category_id: p.category_id || 'none'
@@ -85,6 +89,7 @@ export default function ProductsPage() {
 
     const payload = {
       name: values.name,
+      sku: values.sku || null,
       cost_usd: values.cost_usd,
       custom_effective_price: values.custom_effective_price,
       category_id: catId || null,
@@ -135,10 +140,16 @@ export default function ProductsPage() {
                 <DialogTitle>{editingProductId ? 'Editar Producto' : 'Añadir Producto'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nombre / Descripción</Label>
-                  <Input id="name" {...form.register('name')} placeholder="Ej. Filtro de aceite" className="border-border bg-background" />
-                  {form.formState.errors.name && <p className="text-sm text-rose-500">{form.formState.errors.name.message}</p>}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nombre / Descripción</Label>
+                    <Input id="name" {...form.register('name')} placeholder="Ej. Filtro de aceite" className="border-border bg-background" />
+                    {form.formState.errors.name && <p className="text-sm text-rose-500">{form.formState.errors.name.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sku">SKU (Opcional)</Label>
+                    <Input id="sku" {...form.register('sku')} placeholder="Ej. FL-820S" className="border-border bg-background" />
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -164,7 +175,7 @@ export default function ProductsPage() {
                          categories.find((c) => c.id === form.watch('category_id'))?.name}
                       </SelectValue>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="p-1" alignItemWithTrigger={true}>
                       <SelectItem value="none">Sin categoría</SelectItem>
                       {categories.map((c) => (
                         <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
@@ -209,7 +220,7 @@ export default function ProductsPage() {
               {categoryFilter === 'all' || !categoryFilter ? 'Todas las categorías' : categories.find((c) => c.id === categoryFilter)?.name}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="p-1" alignItemWithTrigger={true}>
             <SelectItem value="all">Todas las categorías</SelectItem>
             {categories.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
@@ -239,6 +250,7 @@ export default function ProductsPage() {
               <TableHeader className="bg-zinc-900/50">
                 <TableRow className="border-border hover:bg-transparent">
                   <TableHead className="font-bold">Producto</TableHead>
+                  <TableHead className="font-bold">SKU</TableHead>
                   <TableHead className="font-bold text-center">Costo USD</TableHead>
                   <TableHead className="font-bold text-center">Costo Bs</TableHead>
                   <TableHead className="font-bold text-center text-emerald-400">Precio Efectivo. ($)</TableHead>
@@ -256,6 +268,9 @@ export default function ProductsPage() {
                       <TableCell>
                         <p className="font-medium text-zinc-200">{p.name}</p>
                         <p className="text-xs text-zinc-500">{p.category?.name || 'Sin categoría'}</p>
+                      </TableCell>
+                      <TableCell>
+                        {p.sku ? <Badge variant="outline" className="text-zinc-400 bg-zinc-900/50">{p.sku}</Badge> : <span className="text-xs text-zinc-500">N/A</span>}
                       </TableCell>
                       <TableCell className="text-center">{formatCurrency(pricing.costUsd)}</TableCell>
                       <TableCell className="text-center text-zinc-500">{formatCurrency(pricing.costBs, 'BS')}</TableCell>
@@ -306,7 +321,10 @@ export default function ProductsPage() {
                 <div key={p.id} className="p-4 space-y-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-medium text-zinc-200">{p.name}</h3>
+                      <h3 className="font-medium text-zinc-200 flex items-center gap-2">
+                        {p.name}
+                        {p.sku && <Badge variant="outline" className="text-[10px] py-0 bg-zinc-900/50 text-zinc-400">{p.sku}</Badge>}
+                      </h3>
                       <span className="text-xs text-zinc-500">{p.category?.name || 'Sin categoría'}</span>
                     </div>
                     <div className="flex items-center">

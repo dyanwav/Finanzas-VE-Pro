@@ -9,6 +9,7 @@ import DashboardPage from '@/pages/DashboardPage'
 import ProductsPage from '@/pages/ProductsPage'
 import SalesPage from '@/pages/SalesPage'
 import RatesPage from '@/pages/RatesPage'
+import CustomersPage from '@/pages/CustomersPage'
 
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize)
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/sales" element={<SalesPage />} />
+        <Route path="/customers" element={<CustomersPage />} />
         <Route path="/rates" element={<RatesPage />} />
       </Route>
 

@@ -103,10 +103,38 @@ export function useDashboard(
     return calculateGap(Number(latest.rate_usdt_at_sale), Number(latest.rate_bcv_at_sale))
   }, [filteredSales])
 
+  const topProducts = useMemo(() => {
+    const productMap = new Map<string, { name: string; quantity: number; revenue: number }>()
+    
+    for (const s of filteredSales) {
+      const res = calculateSaleRevenue(
+        Number(s.product_cost_snapshot),
+        s.quantity,
+        s.payment_type,
+        Number(s.rate_usdt_at_sale),
+        Number(s.rate_bcv_at_sale),
+        Number(s.margin_at_sale)
+      )
+
+      const pid = s.product_id || s.product_name_snapshot
+      const existing = productMap.get(pid) || { name: s.product_name_snapshot, quantity: 0, revenue: 0 }
+      
+      existing.quantity += s.quantity
+      existing.revenue += res.revenue
+      
+      productMap.set(pid, existing)
+    }
+
+    return Array.from(productMap.values())
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5)
+  }, [filteredSales])
+
   return {
     kpis,
     chartData,
     currentGap,
     filteredSalesCount: filteredSales.length,
+    topProducts,
   }
 }

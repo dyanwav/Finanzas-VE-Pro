@@ -7,8 +7,9 @@ import { GapAnalysis } from '@/components/dashboard/GapAnalysis'
 import { formatCurrency, formatPercent } from '@/lib/calculations'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { DollarSign, TrendingUp, Wallet, Percent, Info } from 'lucide-react'
+import { DollarSign, TrendingUp, Wallet, Percent, Info, Package } from 'lucide-react'
 import type { PeriodFilter } from '@/types'
 
 export default function DashboardPage() {
@@ -16,7 +17,7 @@ export default function DashboardPage() {
   const { sales } = useSales()
   const { rateUsdt, rateBcv } = useConfigStore()
   
-  const { kpis, chartData, currentGap } = useDashboard(sales, period)
+  const { kpis, chartData, currentGap, topProducts } = useDashboard(sales, period)
 
   // Utilizar las tasas configuradas globalmente si no hay ventas recientes, 
   // de lo contrario useDashboard usa la más reciente.
@@ -70,6 +71,52 @@ export default function DashboardPage() {
           accentColor="amber" 
         />
       </div>
+
+      {/* Top Products */}
+      {topProducts.length > 0 && (
+        <Card className="card-glass border-border">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Package className="w-5 h-5 text-emerald-400" />
+              Productos Más Vendidos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {topProducts.map((p, i) => {
+                const maxQuantity = topProducts[0].quantity;
+                const percentage = Math.max(5, (p.quantity / maxQuantity) * 100);
+                
+                return (
+                  <div key={i} className="flex flex-col gap-3 p-4 rounded-xl card-glass hover:bg-zinc-900/80 transition-colors">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Badge variant="outline" className="text-emerald-400 bg-emerald-500/10 border-emerald-500/20 shrink-0">
+                          #{i + 1}
+                        </Badge>
+                        <span className="font-medium text-zinc-200 truncate" title={p.name}>{p.name}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-1 mt-auto">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-zinc-400">{p.quantity} unids.</span>
+                        <span className="font-bold text-cyan-400">{formatCurrency(p.revenue)}</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full transition-all duration-500" 
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Gráfico Principal */}

@@ -18,7 +18,7 @@ export function useSales() {
 
     let query = insforge.database
       .from('sales')
-      .select('*')
+      .select('*, customer:customers(*)')
       .eq('user_id', user.id)
       .order('sale_date', { ascending: false })
 
@@ -39,7 +39,8 @@ export function useSales() {
   const createSale = useCallback(async (
     product: Product,
     quantity: number,
-    paymentType: PaymentType
+    paymentType: PaymentType,
+    customerId?: string | null
   ) => {
     if (!user) return { error: 'No autenticado' }
     if (rateUsdt <= 0 || rateBcv <= 0) return { error: 'Configura las tasas cambiarias primero' }
@@ -54,6 +55,7 @@ export function useSales() {
       .insert([{
         user_id: user.id,
         product_id: product.id,
+        customer_id: customerId || null,
         quantity,
         payment_type: paymentType,
         rate_usdt_at_sale: rateUsdt,
