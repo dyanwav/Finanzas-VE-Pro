@@ -31,13 +31,27 @@ export interface Customer {
   created_at: string
 }
 
-export type CustomerInsert = Omit<Customer, 'id' | 'created_at'>
+export type CustomerInsert = Omit<Customer, 'id' | 'created_at' | 'user_id'>
+
+export interface Supplier {
+  id: string
+  user_id: string
+  name: string
+  contact_name: string | null
+  email: string | null
+  phone: string | null
+  address: string | null
+  created_at: string
+}
+
+export type SupplierInsert = Omit<Supplier, 'id' | 'created_at' | 'user_id'>
 
 // ---- Products ----
 export interface Product {
   id: string
   user_id: string
   category_id: string | null
+  supplier_id: string | null
   name: string
   sku?: string | null
   cost_usd: number
@@ -46,6 +60,7 @@ export interface Product {
   updated_at: string
   // Joined
   category?: Category | null
+  supplier?: Supplier | null
 }
 
 export type ProductInsert = Omit<Product, 'id' | 'created_at' | 'updated_at' | 'category'>

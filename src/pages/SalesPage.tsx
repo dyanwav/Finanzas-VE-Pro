@@ -169,12 +169,12 @@ export default function SalesPage() {
                 value={selectedProductId}
                 onValueChange={v => setSelectedProductId(v || '')}
               >
-                <SelectTrigger className="bg-background border-border w-full">
+                <SelectTrigger className="bg-zinc-900/50 border-border w-full">
                   <SelectValue placeholder="Selecciona un producto...">
                     {allProducts.find(p => p.id === selectedProductId)?.name}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="p-1" alignItemWithTrigger={true}>
+                <SelectContent className="p-1" alignItemWithTrigger={false}>
                   {allProducts.map(p => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}
@@ -190,12 +190,12 @@ export default function SalesPage() {
                 value={selectedCustomerId}
                 onValueChange={v => setSelectedCustomerId(v || 'none')}
               >
-                <SelectTrigger className="bg-background border-border w-full">
+                <SelectTrigger className="bg-zinc-900/50 border-border w-full">
                   <SelectValue placeholder="Selecciona un cliente">
                     {selectedCustomerId === 'none' ? 'Venta Rápida' : allCustomers.find(c => c.id === selectedCustomerId)?.name}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="p-1" alignItemWithTrigger={true}>
+                <SelectContent className="p-1" alignItemWithTrigger={false}>
                   <SelectItem value="none">Venta Rápida</SelectItem>
                   {allCustomers.map(c => (
                     <SelectItem key={c.id} value={c.id}>
@@ -206,14 +206,14 @@ export default function SalesPage() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Cantidad</Label>
                 <div className="flex items-center">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="rounded-r-none border-r-0 h-10 w-10 bg-background border-border text-zinc-400 hover:text-zinc-200"
+                    className="rounded-r-none border-r-0 h-10 w-10 bg-zinc-900/50 border-border text-zinc-400 hover:text-zinc-200"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={quantity <= 1}
                   >
@@ -226,12 +226,12 @@ export default function SalesPage() {
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setQuantity(Number(e.target.value) || 1)
                     }
-                    className="rounded-none border-x-0 h-10 text-center bg-background border-border focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="rounded-none border-x-0 h-10 text-center bg-zinc-900/50 border-border focus-visible:ring-0 focus-visible:ring-offset-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <Button
                     variant="outline"
                     size="icon"
-                    className="rounded-l-none border-l-0 h-10 w-10 bg-background border-border text-zinc-400 hover:text-zinc-200"
+                    className="rounded-l-none border-l-0 h-10 w-10 bg-zinc-900/50 border-border text-zinc-400 hover:text-zinc-200"
                     onClick={() => setQuantity(quantity + 1)}
                   >
                     <Plus className="h-4 w-4" />
@@ -246,12 +246,12 @@ export default function SalesPage() {
                     setPaymentType((v as PaymentType ) || 'cash_usd')
                   }
                 >
-                  <SelectTrigger className="bg-background border-border w-full">
+                  <SelectTrigger className="bg-zinc-900/50 border-border w-full">
                     <SelectValue>
                       {paymentType ? PAYMENT_METHODS.find(p => p.id === paymentType)?.name : 'Medio de pago'}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="p-1" alignItemWithTrigger={true}>
+                  <SelectContent className="p-1" alignItemWithTrigger={false}>
                     {PAYMENT_METHODS.map(method => (
                       <SelectItem key={method.id} value={method.id}>
                         {method.name}
@@ -399,7 +399,7 @@ export default function SalesPage() {
                                     </Button>
                                   }
                                 />
-                                <AlertDialogContent className="bg-card border-border">
+                                <AlertDialogContent className="card-glass border-border">
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>
                                       ¿Eliminar venta?
@@ -496,7 +496,7 @@ export default function SalesPage() {
                                 </Button>
                               }
                             />
-                            <AlertDialogContent className="bg-card border-border w-[90%] rounded-xl">
+                            <AlertDialogContent className="card-glass border-border w-[90%] rounded-xl">
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
                                   ¿Eliminar venta?
@@ -526,23 +526,23 @@ export default function SalesPage() {
         </div>
       </div>
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] border-border bg-card">
+        <DialogContent className="sm:max-w-[425px] card-glass border-border">
           <DialogHeader>
             <DialogTitle>Editar Venta</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Producto</Label>
-              <Input disabled value={editingSale?.product_name_snapshot || ''} className="bg-background border-border text-zinc-500" />
+              <Input disabled value={editingSale?.product_name_snapshot || ''} className="bg-zinc-900/50 border-border text-zinc-500" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Cantidad</Label>
                 <div className="flex items-center">
                   <Button
                     variant="outline"
                     size="icon"
-                    className="rounded-r-none border-r-0 h-10 w-10 bg-background border-border text-zinc-400 hover:text-zinc-200"
+                    className="rounded-r-none border-r-0 h-10 w-10 bg-zinc-900/50 border-border text-zinc-400 hover:text-zinc-200"
                     onClick={() => setEditQuantity(Math.max(1, editQuantity - 1))}
                     disabled={editQuantity <= 1}
                   >
@@ -553,12 +553,12 @@ export default function SalesPage() {
                     min={1}
                     value={editQuantity}
                     onChange={(e) => setEditQuantity(Number(e.target.value) || 1)}
-                    className="rounded-none border-x-0 h-10 text-center bg-background border-border focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="rounded-none border-x-0 h-10 text-center bg-zinc-900/50 border-border focus-visible:ring-0 focus-visible:ring-offset-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <Button
                     variant="outline"
                     size="icon"
-                    className="rounded-l-none border-l-0 h-10 w-10 bg-background border-border text-zinc-400 hover:text-zinc-200"
+                    className="rounded-l-none border-l-0 h-10 w-10 bg-zinc-900/50 border-border text-zinc-400 hover:text-zinc-200"
                     onClick={() => setEditQuantity(editQuantity + 1)}
                   >
                     <Plus className="h-4 w-4" />
@@ -571,10 +571,10 @@ export default function SalesPage() {
                   value={editPaymentType}
                   onValueChange={(v) => setEditPaymentType(v as PaymentType)}
                 >
-                  <SelectTrigger className="bg-background border-border w-full">
+                  <SelectTrigger className="bg-zinc-900/50 border-border w-full">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="p-1" alignItemWithTrigger={true}>
+                  <SelectContent className="p-1" alignItemWithTrigger={false}>
                     {PAYMENT_METHODS.map(method => (
                       <SelectItem key={method.id} value={method.id}>
                         {method.name}

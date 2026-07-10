@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
+  Building,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
@@ -35,6 +36,7 @@ const navItems = [
   { to: '/products', label: 'Productos', icon: Package },
   { to: '/sales', label: 'Ventas', icon: ShoppingCart },
   { to: '/customers', label: 'Clientes', icon: Users },
+  { to: '/suppliers', label: 'Proveedores', icon: Building },
   { to: '/rates', label: 'Tasas', icon: TrendingUp },
 ] as const
 

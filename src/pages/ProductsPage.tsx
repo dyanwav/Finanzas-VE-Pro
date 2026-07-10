@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useProducts } from '@/hooks/useProducts'
+import { useSuppliers } from '@/hooks/useSuppliers'
 import type { Product } from '@/types'
 import { useConfigStore } from '@/stores/config-store'
 import { useExport } from '@/hooks/useExport'
@@ -23,20 +24,23 @@ import { Plus, Search, Download, Trash2, Package, Loader2 } from 'lucide-react'
 const productSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
   sku: z.string().optional().nullable(),
-  cost_usd: z.coerce.number().positive('El costo debe ser mayor a 0'),
+  cost_usd: z.coerce.number().nonnegative('El costo no puede ser negativo').positive('El costo debe ser mayor a 0'),
   custom_effective_price: z.union([z.string(), z.number()]).optional().nullable()
     .transform(v => {
        if (v === '' || v === null || v === undefined) return null;
        const num = Number(v);
+       if (num < 0) return null; // or handle error
        return isNaN(num) ? null : num;
     }),
   category_id: z.string().optional(),
+  supplier_id: z.string().optional(),
 })
 
 type ProductFormValues = z.infer<typeof productSchema>
 
 export default function ProductsPage() {
   const { products, categories, loading, search, setSearch, categoryFilter, setCategoryFilter, createProduct, updateProduct, deleteProduct, createCategory } = useProducts()
+  const { suppliers } = useSuppliers()
   const { rateUsdt, rateBcv, profitMargin } = useConfigStore()
   const { exportProducts } = useExport()
 
@@ -53,12 +57,13 @@ export default function ProductsPage() {
       cost_usd: 0,
       custom_effective_price: null,
       category_id: 'none',
+      supplier_id: 'none',
     }
   })
 
   const handleCreate = () => {
     setEditingProductId(null)
-    form.reset({ name: '', sku: '', cost_usd: 0, custom_effective_price: null, category_id: 'none' })
+    form.reset({ name: '', sku: '', cost_usd: 0, custom_effective_price: null, category_id: 'none', supplier_id: 'none' })
     setIsDialogOpen(true)
   }
 
@@ -69,7 +74,8 @@ export default function ProductsPage() {
       sku: p.sku || '',
       cost_usd: p.cost_usd,
       custom_effective_price: p.custom_effective_price || null,
-      category_id: p.category_id || 'none'
+      category_id: p.category_id || 'none',
+      supplier_id: p.supplier_id || 'none'
     })
     setIsDialogOpen(true)
   }
@@ -93,6 +99,7 @@ export default function ProductsPage() {
       cost_usd: values.cost_usd,
       custom_effective_price: values.custom_effective_price,
       category_id: catId || null,
+      supplier_id: values.supplier_id === 'none' || !values.supplier_id ? null : values.supplier_id,
     }
 
     if (editingProductId) {
@@ -135,60 +142,80 @@ export default function ProductsPage() {
                 Nuevo Producto
               </Button>
             } />
-            <DialogContent className="sm:max-w-[425px] border-border bg-card">
+            <DialogContent className="sm:max-w-[425px] card-glass border-border">
               <DialogHeader>
                 <DialogTitle>{editingProductId ? 'Editar Producto' : 'Añadir Producto'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nombre / Descripción</Label>
-                    <Input id="name" {...form.register('name')} placeholder="Ej. Filtro de aceite" className="border-border bg-background" />
+                    <Input id="name" {...form.register('name')} placeholder="Ej. Filtro de aceite" className="border-border bg-zinc-900/50" />
                     {form.formState.errors.name && <p className="text-sm text-rose-500">{form.formState.errors.name.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="sku">SKU (Opcional)</Label>
-                    <Input id="sku" {...form.register('sku')} placeholder="Ej. FL-820S" className="border-border bg-background" />
+                    <Input id="sku" {...form.register('sku')} placeholder="Ej. FL-820S" className="border-border bg-zinc-900/50" />
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="cost_usd">Costo Unitario (USD)</Label>
-                    <Input id="cost_usd" type="number" step="0.01" {...form.register('cost_usd')} className="border-border bg-background" />
+                    <Input id="cost_usd" type="number" step="0.01" min="0" {...form.register('cost_usd')} className="border-border bg-zinc-900/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                     {form.formState.errors.cost_usd && <p className="text-sm text-rose-500">{form.formState.errors.cost_usd.message}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="custom_effective_price">Precio Ef. Manual (Opcional)</Label>
-                    <Input id="custom_effective_price" type="number" step="0.01" {...form.register('custom_effective_price')} placeholder="Automático" className="border-border bg-background" />
+                    <Input id="custom_effective_price" type="number" step="0.01" min="0" {...form.register('custom_effective_price')} placeholder="Automático" className="border-border bg-zinc-900/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                     {form.formState.errors.custom_effective_price && <p className="text-sm text-rose-500">{form.formState.errors.custom_effective_price.message}</p>}
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="category">Categoría</Label>
-                  <Select onValueChange={(val) => form.setValue('category_id', val || 'none')} defaultValue={form.getValues('category_id') || 'none'}>
-                    <SelectTrigger className="border-border bg-background">
-                      <SelectValue placeholder="Selecciona una categoría">
-                        {form.watch('category_id') === 'none' || !form.watch('category_id') ? 'Sin categoría' :
-                         form.watch('category_id') === 'new' ? '+ Crear nueva categoría' :
-                         categories.find((c) => c.id === form.watch('category_id'))?.name}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="p-1" alignItemWithTrigger={true}>
-                      <SelectItem value="none">Sin categoría</SelectItem>
-                      {categories.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                      ))}
-                      <SelectItem value="new">+ Crear nueva categoría</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2 flex flex-col">
+                    <Label htmlFor="category">Categoría</Label>
+                    <Select onValueChange={(val) => form.setValue('category_id', val || 'none')} defaultValue={form.getValues('category_id') || 'none'}>
+                      <SelectTrigger className="border-border bg-zinc-900/50 w-full truncate">
+                        <SelectValue placeholder="Selecciona una categoría">
+                          {form.watch('category_id') === 'none' || !form.watch('category_id') ? 'Sin categoría' :
+                           form.watch('category_id') === 'new' ? '+ Crear nueva categoría' :
+                           categories.find((c) => c.id === form.watch('category_id'))?.name}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="p-1 max-w-[calc(100vw-2rem)]" alignItemWithTrigger={false}>
+                        <SelectItem value="none" className="whitespace-normal break-words">Sin categoría</SelectItem>
+                        {categories.map((c) => (
+                          <SelectItem key={c.id} value={c.id} className="whitespace-normal break-words">{c.name}</SelectItem>
+                        ))}
+                        <SelectItem value="new" className="whitespace-normal break-words">+ Crear nueva categoría</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 flex flex-col">
+                    <Label htmlFor="supplier_id">Proveedor</Label>
+                    <Select onValueChange={(val) => form.setValue('supplier_id', val || 'none')} defaultValue={form.getValues('supplier_id') || 'none'}>
+                      <SelectTrigger className="border-border bg-zinc-900/50 w-full truncate">
+                        <SelectValue placeholder="Selecciona un proveedor">
+                          {form.watch('supplier_id') === 'none' || !form.watch('supplier_id') ? 'Sin proveedor' :
+                           suppliers.find((s) => s.id === form.watch('supplier_id'))?.name}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="p-1 max-w-[calc(100vw-2rem)]" alignItemWithTrigger={false}>
+                        <SelectItem value="none" className="whitespace-normal break-words">Sin proveedor</SelectItem>
+                        {suppliers.map((s) => (
+                          <SelectItem key={s.id} value={s.id} className="whitespace-normal break-words">{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {form.watch('category_id') === 'new' && (
                   <div className="space-y-2 pt-2 animate-slide-up">
                     <Label htmlFor="newCategory">Nombre de nueva categoría</Label>
-                    <Input id="newCategory" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Ej. Lubricantes" className="border-border bg-background" />
+                    <Input id="newCategory" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Ej. Lubricantes" className="border-border bg-zinc-900/50" />
                   </div>
                 )}
 
@@ -220,10 +247,10 @@ export default function ProductsPage() {
               {categoryFilter === 'all' || !categoryFilter ? 'Todas las categorías' : categories.find((c) => c.id === categoryFilter)?.name}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="p-1" alignItemWithTrigger={true}>
-            <SelectItem value="all">Todas las categorías</SelectItem>
+          <SelectContent className="p-1 max-w-[calc(100vw-2rem)]" alignItemWithTrigger={false}>
+            <SelectItem value="all" className="whitespace-normal break-words">Todas las categorías</SelectItem>
             {categories.map((c) => (
-              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              <SelectItem key={c.id} value={c.id} className="whitespace-normal break-words">{c.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -267,7 +294,9 @@ export default function ProductsPage() {
                     <TableRow key={p.id} className="border-border hover:bg-zinc-800/50 transition-colors">
                       <TableCell>
                         <p className="font-medium text-zinc-200">{p.name}</p>
-                        <p className="text-xs text-zinc-500">{p.category?.name || 'Sin categoría'}</p>
+                        <p className="text-xs text-zinc-500">
+                          {p.category?.name || 'Sin categoría'} {p.supplier ? `• ${p.supplier.name}` : ''}
+                        </p>
                       </TableCell>
                       <TableCell>
                         {p.sku ? <Badge variant="outline" className="text-zinc-400 bg-zinc-900/50">{p.sku}</Badge> : <span className="text-xs text-zinc-500">N/A</span>}
@@ -291,7 +320,7 @@ export default function ProductsPage() {
                                 </Button>
                               }
                             />
-                            <AlertDialogContent className="bg-card border-border">
+                            <AlertDialogContent className="card-glass border-border">
                               <AlertDialogHeader>
                                 <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
                                 <AlertDialogDescription>
@@ -339,7 +368,7 @@ export default function ProductsPage() {
                             </Button>
                           }
                         />
-                        <AlertDialogContent className="bg-card border-border w-[90%] rounded-xl">
+                        <AlertDialogContent className="card-glass border-border w-[90%] rounded-xl">
                           <AlertDialogHeader>
                             <AlertDialogTitle>¿Eliminar?</AlertDialogTitle>
                             <AlertDialogDescription>¿Seguro que deseas eliminar "{p.name}"?</AlertDialogDescription>

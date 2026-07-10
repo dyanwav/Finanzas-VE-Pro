@@ -94,7 +94,7 @@ export default function RatesPage() {
                   step="0.01" 
                   value={rateUsdt || ''} 
                   onChange={(e) => setRateUsdt(Number(e.target.value))} 
-                  className="pl-9 pr-9 bg-background border-border font-medium disabled:opacity-50"
+                  className="pl-9 pr-9 bg-zinc-900/50 border-border font-medium disabled:opacity-50"
                   disabled={!isCustomUsdt}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">
@@ -124,7 +124,7 @@ export default function RatesPage() {
                   step="0.01" 
                   value={rateBcv || ''} 
                   onChange={(e) => setRateBcv(Number(e.target.value))} 
-                  className="pl-9 pr-9 bg-background border-border font-medium disabled:opacity-50"
+                  className="pl-9 pr-9 bg-zinc-900/50 border-border font-medium disabled:opacity-50"
                   disabled={!isCustomBcv}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">
@@ -140,7 +140,7 @@ export default function RatesPage() {
                   type="number" 
                   value={profitMargin || ''} 
                   onChange={(e) => setProfitMargin(Number(e.target.value))} 
-                  className="pr-9 bg-background border-border font-medium"
+                  className="pr-9 bg-zinc-900/50 border-border font-medium"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 font-bold">%</span>
               </div>

@@ -115,6 +115,9 @@ export const useConfigStore = create<ConfigState>()(
 
       // Automatically fetch API rates if they are not customized
       await get().fetchLiveRates()
+
+      // Auto-save the fetched/loaded rates for today to build the history graph
+      await get().saveTodayRates(userId)
     },
 
   saveTodayRates: async (userId) => {

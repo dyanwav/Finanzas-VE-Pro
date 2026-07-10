@@ -124,31 +124,31 @@ export default function CustomersPage() {
                 Nuevo Cliente
               </Button>
             } />
-            <DialogContent className="sm:max-w-[425px] border-border bg-card">
+            <DialogContent className="sm:max-w-[425px] card-glass border-border">
               <DialogHeader>
                 <DialogTitle>{editingCustomerId ? 'Editar Cliente' : 'Registrar Cliente'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre / Razón Social</Label>
-                  <Input id="name" {...form.register('name')} placeholder="Ej. Juan Pérez" className="border-border bg-background" />
+                  <Input id="name" {...form.register('name')} placeholder="Ej. Juan Pérez" className="border-border bg-zinc-900/50" />
                   {form.formState.errors.name && <p className="text-sm text-rose-500">{form.formState.errors.name.message}</p>}
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="document_id">Cédula / RIF (Opcional)</Label>
-                  <Input id="document_id" {...form.register('document_id')} placeholder="Ej. V-12345678" className="border-border bg-background" />
+                  <Input id="document_id" {...form.register('document_id')} placeholder="Ej. V-12345678" className="border-border bg-zinc-900/50" />
                   {form.formState.errors.document_id && <p className="text-sm text-rose-500">{form.formState.errors.document_id.message}</p>}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Teléfono (Opcional)</Label>
-                    <Input id="phone" {...form.register('phone')} placeholder="Ej. 0414-1234567" className="border-border bg-background" />
+                    <Input id="phone" {...form.register('phone')} placeholder="0414-1234567" className="border-border bg-zinc-900/50" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email (Opcional)</Label>
-                    <Input id="email" type="email" {...form.register('email')} placeholder="correo@ejemplo.com" className="border-border bg-background" />
+                    <Input id="email" type="email" {...form.register('email')} placeholder="correo@ejemplo.com" className="border-border bg-zinc-900/50" />
                     {form.formState.errors.email && <p className="text-sm text-rose-500">{form.formState.errors.email.message}</p>}
                   </div>
                 </div>
@@ -230,7 +230,7 @@ export default function CustomersPage() {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           } />
-                          <AlertDialogContent className="bg-card border-border">
+                          <AlertDialogContent className="card-glass border-border">
                             <AlertDialogHeader>
                               <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
                               <AlertDialogDescription>
@@ -255,7 +255,7 @@ export default function CustomersPage() {
 
       {/* History Drawer/Sheet */}
       <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <SheetContent className="bg-card border-l-border w-full sm:max-w-md overflow-y-auto">
+        <SheetContent className="card-glass border-l-border w-full sm:max-w-md overflow-y-auto p-4 sm:p-6">
           <SheetHeader className="mb-6">
             <SheetTitle>Historial de Compras</SheetTitle>
             <SheetDescription>
